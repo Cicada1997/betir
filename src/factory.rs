@@ -4,13 +4,9 @@ use macroquad::prelude::*;
 use hecs::{Entity, World};
 
 use crate::{
-    GameEvent,
-    components::{
-        transform::*,
-        missile::*,
-        weapon::*,
-        tags::Player,
-    },
+    GameEvent, PlayerAction, components::{
+        missile::*, tags::Player, transform::*, weapon::*
+    }
 };
 
 pub fn spawn_player(ecs: &mut World, x: f32, y: f32) -> hecs::Entity {
@@ -64,7 +60,7 @@ pub fn default_keybinds() -> HashMap<KeyCode, GameEvent> {
         (KeyCode::S, GameEvent::MovePlayer { x: 0., y: 1. }),
         (KeyCode::D, GameEvent::MovePlayer { x: 1., y: 0. }),
 
-        (KeyCode::Space, GameEvent::Shoot),
+        (KeyCode::Space, GameEvent::ActionPreformed(PlayerAction::Shoot())),
 
         (KeyCode::Escape, GameEvent::Exit(None)),
     ])

@@ -1,9 +1,5 @@
 type Error = Box<dyn std::error::Error>;
 
-use std::time::{Duration, Instant};
-
-use crate::components::weapon::Weapon;
-
 use {
     std::process::exit,
 
@@ -26,14 +22,19 @@ use {
     systems::{
         movement, 
         render::{ draw_players, draw_missiles },
+        action::{ on_action },
     },
 };
+#[derive(Clone, Copy)]
+pub enum PlayerAction {
+    Shoot(),
+}
 
 #[derive(Clone, Copy)]
 pub enum GameEvent {
     Exit( Option<i32> ),
 
-    Shoot,
+    ActionPreformed(PlayerAction),
 
     MovePlayer {
         x: f32,
@@ -94,40 +95,8 @@ fn update(ecs: &mut World, player: Entity, keybinds: &KeyBindings) {
                 }
             },
 
-            GameEvent::Shoot => {
-                let (pos, rot) = {
-                    let transform = ecs.get::<&Transform>(player)
-                        .unwrap_or_else(|_| panic!("Unknown sender {} tried to send a missile.", player.id()));
-
-                    (transform.pos, transform.rot)
-                };
-
-                if let Ok(weapon) = ecs.query_one_mut::<&mut Weapon>(player) {
-                    if weapon.magazine <= 0 && !weapon.reloading {
-                        weapon.reloading = true;
-                        continue;
-                    }
-
-                    let last = Instant::now().duration_since(weapon.last_fired);
-
-                    if weapon.reloading {
-                        if last > Duration::from_secs(3) {
-                            weapon.magazine = weapon.max_ammo;
-                            weapon.reloading = false;
-                        } else {
-                            continue;
-                        }
-                    }
-
-                    if last > weapon.cooldown {
-                        weapon.last_fired = Instant::now();
-                        weapon.magazine -= 1;
-                    } else {
-                        continue;
-                    }
-                }
-
-                let _ = factory::spawn_missile(ecs, pos, rot, Some(player));
+            GameEvent::ActionPreformed(action) => {
+                on_action(ecs, action, player);
             },
 
             GameEvent::Exit(None) => exit(0),

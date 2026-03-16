@@ -1,5 +1,7 @@
 type Error = Box<dyn std::error::Error>;
 
+use crate::components::weapon;
+
 use {
     std::process::exit,
 
@@ -21,13 +23,15 @@ use {
 
     systems::{
         movement, 
-        render::{ draw_players, draw_missiles },
+        render::{ draw_players, draw_missiles, draw_hud },
         action::{ on_action },
     },
 };
+
 #[derive(Clone, Copy)]
 pub enum PlayerAction {
     Shoot(),
+    Reload()
 }
 
 #[derive(Clone, Copy)]
@@ -61,7 +65,7 @@ async fn run() -> Result<(), Error> {
 
     loop {
         update(&mut ecs, player, &keybinds);
-        draw(&ecs);
+        draw(&ecs, player);
         next_frame().await;
     }
 }
@@ -85,7 +89,7 @@ fn update(ecs: &mut World, player: Entity, keybinds: &KeyBindings) {
     for event in game_events {
         match event {
             GameEvent::MovePlayer { x, y } => {
-                if let Ok(transform) = ecs.query_one_mut::<&mut Transform, >(player) {
+                if let Ok(transform) = ecs.query_one_mut::<&mut Transform>(player) {
                     transform.rot = (Vec2::from_angle(transform.rot) + vec2(x, y))
                         .clamp(Vec2::NEG_ONE, Vec2::ONE)
                         .normalize_or_zero()
@@ -106,13 +110,16 @@ fn update(ecs: &mut World, player: Entity, keybinds: &KeyBindings) {
     }
 
     let dt = get_frame_time();
-    movement::update_player(  ecs, dt );
+    movement::update_player ( ecs, dt );
     movement::update_missile( ecs, dt );
+    weapon::update_weapons  ( ecs     );
 }
 
-fn draw(ecs: &World) {
+fn draw(ecs: &World, player: Entity) {
     clear_background(WHITE);
 
     draw_players(ecs);
     draw_missiles(ecs);
+
+    draw_hud(ecs, player);
 }

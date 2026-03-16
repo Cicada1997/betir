@@ -1,6 +1,8 @@
+use macroquad::math::Vec2;
+
 use {
     hecs::*,
-    std::time::{ Duration, Instant },
+    std::time::Instant,
 };
 
 use crate::{
@@ -16,38 +18,33 @@ use crate::{
 
 pub fn on_action(ecs: &mut World, action: PlayerAction, player: Entity) {
     match action {
+        PlayerAction::Reload() => {
+            if let Ok(weapon) = ecs.query_one_mut::<&mut Weapon>(player) {
+                if weapon.magazine == weapon.max_ammo { return; }
+
+                weapon.last_fired = Instant::now();
+                weapon.reloading = true;
+            }
+        },
+
         PlayerAction::Shoot() => {
+            if let Ok(weapon) = ecs.query_one_mut::<&mut Weapon>(player) {
+
+                if weapon.reloading 
+                    || weapon.magazine < 1
+                    || weapon.cooldown > Instant::now().duration_since(weapon.last_fired)
+                    { return; }
+
+                weapon.last_fired = Instant::now();
+                weapon.magazine -= 1;
+            }
+
             let (pos, rot) = {
                 let transform = ecs.get::<&Transform>(player)
-                    .unwrap_or_else(|_| panic!("Unknown sender {} tried to send a missile.", player.id()));
+                    .unwrap_or_else(|_| panic!("Unknown sender {} tried to send a missile.", player.id() ));
 
-                (transform.pos, transform.rot)
+                (transform.pos + Vec2::from_angle(transform.rot), transform.rot)
             };
-
-            if let Ok(weapon) = ecs.query_one_mut::<&mut Weapon>(player) {
-                if weapon.magazine <= 0 && !weapon.reloading {
-                    weapon.reloading = true;
-                    return;
-                }
-
-                let last = Instant::now().duration_since(weapon.last_fired);
-
-                if weapon.reloading {
-                    if last > Duration::from_secs(3) {
-                        weapon.magazine = weapon.max_ammo;
-                        weapon.reloading = false;
-                    } else {
-                        return;
-                    }
-                }
-
-                if last > weapon.cooldown {
-                    weapon.last_fired = Instant::now();
-                    weapon.magazine -= 1;
-                } else {
-                    return;
-                }
-            }
 
             let _ = factory::spawn_missile(ecs, pos, rot, Some(player));
         }

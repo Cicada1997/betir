@@ -8,12 +8,13 @@ use crate::components::{
 };
 
 pub fn update_player(ecs: &mut World, dt: f32) {
-
     for transform in ecs.query_mut::<&mut Transform>().with::<&Player>() {
         transform.last_pos = transform.pos;
         transform.pos += Vec2::from_angle(transform.rot) * transform.speed * dt;
 
+        // TODO: this does not work for some reason ( check input )
         transform.speed *= 0.95 * dt; // friction/retardation
+
         if transform.speed < 0. { transform.speed = 0.; }
     }
 }

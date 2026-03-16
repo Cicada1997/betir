@@ -25,7 +25,9 @@ pub fn spawn_player(ecs: &mut World, x: f32, y: f32) -> hecs::Entity {
 
             magazine: 32,
             max_ammo: 32,
+
             reloading:  false,
+            reload_time: Duration::from_secs_f32(1.1),
 
             r#type: WeaponType::SMG,
         },
@@ -60,6 +62,7 @@ pub fn default_keybinds() -> HashMap<KeyCode, GameEvent> {
         (KeyCode::S, GameEvent::MovePlayer { x: 0., y: 1. }),
         (KeyCode::D, GameEvent::MovePlayer { x: 1., y: 0. }),
 
+        (KeyCode::R,     GameEvent::ActionPreformed(PlayerAction::Reload())),
         (KeyCode::Space, GameEvent::ActionPreformed(PlayerAction::Shoot())),
 
         (KeyCode::Escape, GameEvent::Exit(None)),

@@ -1,6 +1,6 @@
 type Error = Box<dyn std::error::Error>;
 
-use crate::components::weapon;
+use crate::systems::render::draw_flies;
 
 use {
     std::process::exit,
@@ -9,12 +9,17 @@ use {
     hecs::*,
 };
 
-pub mod factory;
 pub mod components;
 pub mod systems;
 
+pub mod factory;
+pub mod timer;
+
 use {
-    components::transform::*,
+    components::{
+        transform::*,
+        weapon,
+    },
 
     factory::{
         KeyBindings,
@@ -25,6 +30,7 @@ use {
         movement, 
         render::{ draw_players, draw_missiles, draw_hud },
         action::{ on_action },
+        enemy_spawner::spawn_enemies_natrual,
     },
 };
 
@@ -90,7 +96,7 @@ fn update(ecs: &mut World, player: Entity, keybinds: &KeyBindings) {
         match event {
             GameEvent::MovePlayer { x, y } => {
                 if let Ok(transform) = ecs.query_one_mut::<&mut Transform>(player) {
-                    transform.rot = (Vec2::from_angle(transform.rot) + vec2(x, y))
+                    transform.rot = (Vec2::from_angle(transform.rot) + vec2(x, y) * 0.1)
                         .clamp(Vec2::NEG_ONE, Vec2::ONE)
                         .normalize_or_zero()
                         .to_angle();
@@ -110,16 +116,20 @@ fn update(ecs: &mut World, player: Entity, keybinds: &KeyBindings) {
     }
 
     let dt = get_frame_time();
-    movement::update_player ( ecs, dt );
-    movement::update_missile( ecs, dt );
-    weapon::update_weapons  ( ecs     );
+
+    spawn_enemies_natrual(ecs, player);
+
+    movement::update_player  ( ecs, dt );
+    movement::update_missile ( ecs, dt );
+    weapon::update_guns      ( ecs     );
 }
 
 fn draw(ecs: &World, player: Entity) {
     clear_background(WHITE);
 
-    draw_players(ecs);
+    draw_players (ecs);
     draw_missiles(ecs);
+    draw_flies   (ecs);
 
     draw_hud(ecs, player);
 }

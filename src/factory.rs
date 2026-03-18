@@ -1,12 +1,14 @@
-use std::{collections::HashMap, time::{Duration, Instant}};
+use {
+    std::collections::HashMap,
 
-use macroquad::prelude::*;
-use hecs::{Entity, World};
+    macroquad::prelude::*,
+    hecs::{Entity, World},
+};
 
 use crate::{
     GameEvent, PlayerAction, components::{
-        missile::*, tags::Player, transform::*, weapon::*
-    }
+        fly::Fly, missile::*, tags::{Enemy, Player}, transform::*, weapon::Gun
+    }, timer::Timer
 };
 
 pub fn spawn_player(ecs: &mut World, x: f32, y: f32) -> hecs::Entity {
@@ -19,19 +21,39 @@ pub fn spawn_player(ecs: &mut World, x: f32, y: f32) -> hecs::Entity {
             speed:      0.,
             max_speed:  250.,
         },
-        Weapon {
-            cooldown:   Duration::from_millis(120),
-            last_fired: Instant::now() - Duration::from_millis(120),
+        Gun {
+            cooldown_timer: Timer::new(0.07, true),
 
             magazine: 32,
-            max_ammo: 32,
+            max_ammo: 48,
 
-            reloading:  false,
-            reload_time: Duration::from_secs_f32(1.1),
-
-            r#type: WeaponType::SMG,
+            reload_timer:   Timer::new(0.56, false),
         },
         Player,
+    ))
+}
+
+// TODO: implement flies
+pub fn spawn_fly(ecs: &mut World, x: f32, y: f32) -> hecs::Entity {
+    ecs.spawn((
+        Transform {
+            pos:        Vec2 { x, y, },
+            last_pos:   Vec2 { x, y, },
+            rot:        0.,
+
+            speed:      0.,
+            max_speed:  250.,
+        },
+        Enemy,
+        Fly {
+            speed:           0.,
+            max_speed:       250.,
+            detection_range: 800.,
+
+            attack_speed:    2.,
+            attack_range:    100.,
+            attack_damage:   14.,
+        }
     ))
 }
 
@@ -40,7 +62,7 @@ pub fn spawn_missile(ecs: &mut World, spawnpoint: Vec2, rot: f32, sender: Option
         Missile {
             spawnpoint,
             sender,
-            range:      500.,
+            range:      900.,
         },
         Transform {
             pos:        spawnpoint,

@@ -1,17 +1,10 @@
-use std::time::Instant;
-
 use {
     macroquad::prelude::*,
     hecs::*,
 };
 
-use crate::{
-    components::{
-        transform::*,
-        missile::*,
-        weapon::*,
-        tags::Player,
-    },
+use crate::components::{
+    fly::Fly, missile::*, tags::Player, transform::*, weapon::Gun
 };
 
 pub fn draw_players(ecs: &World) {
@@ -43,11 +36,22 @@ pub fn draw_missiles(ecs: &World) {
     }
 }
 
+pub fn draw_flies(ecs: &World) {
+    for (transform, _fly) in ecs.query::<(&Transform, &Fly)>().iter() {
+        let size = 5.;
+        let thickness = 4.;
+
+        draw_line(transform.pos.x + size, transform.pos.y + size, transform.pos.x - size, transform.pos.y - size, thickness, BLACK);
+        draw_line(transform.pos.x + size, transform.pos.y - size, transform.pos.x - size, transform.pos.y + size, thickness, BLACK);
+    }
+}
+
 pub fn draw_hud(ecs: &World, player: Entity) {
     //                //
     //  Magazine Bar  //
     //                //
-    let weapon = ecs.get::<&Weapon>(player).unwrap();
+    let gun = ecs.get::<&Gun>(player).unwrap();
+
     let sq = {
         let w = screen_width() / 2.;
         let x = (screen_width() - w) / 2.;
@@ -56,7 +60,7 @@ pub fn draw_hud(ecs: &World, player: Entity) {
 
         draw_rectangle(sq.x, sq.y, sq.w, sq.h, BLACK);
         draw_rectangle(sq.x + border, sq.y + border, sq.w - 2. * border, sq.h - 2. * border, GRAY);
-        draw_rectangle(sq.x + border, sq.y + border, (sq.w - 2. * border) * (weapon.magazine as f32 / weapon.max_ammo as f32) as f32, sq.h - 2. * border, RED);
+        draw_rectangle(sq.x + border, sq.y + border, (sq.w - 2. * border) * (gun.magazine as f32 / gun.max_ammo as f32) as f32, sq.h - 2. * border, RED);
 
         sq
     };
@@ -68,21 +72,28 @@ pub fn draw_hud(ecs: &World, player: Entity) {
     let padding = 5.;
     let ammo_x = sq.x - (radius + 2. * padding);
 
-    if weapon.reloading {
-        let reload_indicator_value = 360. * Instant::now().duration_since(weapon.last_fired).as_secs_f32() / weapon.reload_time.as_secs_f32();
-        draw_arc(ammo_x, sq.y + (sq.h / 2.), 255, radius, 0., 5., reload_indicator_value, BLACK);
+    if !gun.reload_timer.is_finished() {
+        draw_arc(ammo_x, sq.y + (sq.h / 2.), 255, radius, 0., 5., 360. * gun.reload_timer.percentage_elapsed() as f32, BLACK);
     };
 
     //                   //
     //  Magazine number  //
     //                   //
-    let t_col = match weapon.magazine {
+    let t_col = match gun.magazine {
         0..8 => RED,
         8..20 => YELLOW,
         20..30 => GREEN,
         30..=u32::MAX => BLACK,
         
     };
+
     let font_size = 30.;
-    draw_text(&weapon.magazine.to_string(), ammo_x, sq.y + (sq.h - font_size) / 2., font_size, t_col);
+    draw_text(&gun.magazine.to_string(), ammo_x, sq.y + (sq.h - font_size) / 2., font_size, t_col);
+
+    draw_text(&format!("FPS: {}", get_fps()), 40., 60., 40., GREEN);
+
+    let alive_flies    = ecs.query::<&Fly>().iter().count();
+    let alive_enitites = ecs.iter().count();
+
+    print!("\rAlive Flies: {alive_flies} Alive Entities: {alive_enitites}");
 }

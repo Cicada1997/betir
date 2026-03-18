@@ -2,7 +2,6 @@ use macroquad::math::Vec2;
 
 use {
     hecs::*,
-    std::time::Instant,
 };
 
 use crate::{
@@ -10,7 +9,7 @@ use crate::{
 
     components::{
         transform::*,
-        weapon::*,
+        weapon::Gun,
     },
 
     factory,
@@ -19,24 +18,26 @@ use crate::{
 pub fn on_action(ecs: &mut World, action: PlayerAction, player: Entity) {
     match action {
         PlayerAction::Reload() => {
-            if let Ok(weapon) = ecs.query_one_mut::<&mut Weapon>(player) {
-                if weapon.magazine == weapon.max_ammo { return; }
+            if let Ok(gun) = ecs.query_one_mut::<&mut Gun>(player) {
+                if gun.magazine == gun.max_ammo { return; }
 
-                weapon.last_fired = Instant::now();
-                weapon.reloading = true;
+                gun.reload_timer.reset();
+                gun.reload_timer.start();
+                // gun.last_fired = Instant::now();
+                // gun.reloading = true;
             }
         },
 
         PlayerAction::Shoot() => {
-            if let Ok(weapon) = ecs.query_one_mut::<&mut Weapon>(player) {
+            if let Ok(gun) = ecs.query_one_mut::<&mut Gun>(player) {
 
-                if weapon.reloading 
-                    || weapon.magazine < 1
-                    || weapon.cooldown > Instant::now().duration_since(weapon.last_fired)
+                if !gun.cooldown_timer.is_finished() 
+                   || gun.reload_timer.enabled
+                   || gun.magazine < 1
                     { return; }
 
-                weapon.last_fired = Instant::now();
-                weapon.magazine -= 1;
+                gun.cooldown_timer.reset();
+                gun.magazine -= 1;
             }
 
             let (pos, rot) = {

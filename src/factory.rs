@@ -6,9 +6,20 @@ use {
 };
 
 use crate::{
-    GameEvent, PlayerAction, components::{
-        fly::Fly, missile::*, tags::{Enemy, Player}, transform::*, weapon::Gun
-    }, timer::Timer
+    event::{
+        GameEvent, 
+        PlayerAction, 
+    },
+
+    components::{
+        fly::*,
+        missile::*,
+        transform::*,
+        weapon::*,
+        tags::{ Enemy, Player },
+    }, 
+
+    timer::*,
 };
 
 pub fn spawn_player(ecs: &mut World, x: f32, y: f32) -> hecs::Entity {

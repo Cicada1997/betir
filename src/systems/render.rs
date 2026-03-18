@@ -4,8 +4,22 @@ use {
 };
 
 use crate::components::{
-    fly::Fly, missile::*, tags::Player, transform::*, weapon::Gun
+    fly::*,
+    missile::*,
+    tags::*,
+    transform::*,
+    weapon::*,
 };
+
+pub fn draw(ecs: &World, player: Entity) {
+    clear_background(WHITE);
+
+    draw_players (ecs);
+    draw_missiles(ecs);
+    draw_flies   (ecs);
+
+    draw_hud(ecs, player);
+}
 
 pub fn draw_players(ecs: &World) {
     let pwidth = 20.;

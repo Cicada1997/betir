@@ -5,7 +5,7 @@ use {
 };
 
 use crate::{
-    PlayerAction,
+    event::PlayerAction,
 
     components::{
         transform::*,

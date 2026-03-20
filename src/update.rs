@@ -8,12 +8,12 @@ use {
 use crate::{
     components::{
         transform::*,
-        weapon,
     },
     systems::{
         movement, 
         action::{ on_action },
         enemy_spawner::spawn_enemies_natrual,
+        weapon,
     },
     factory::{
         KeyBindings,

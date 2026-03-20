@@ -23,8 +23,6 @@ pub fn on_action(ecs: &mut World, action: PlayerAction, player: Entity) {
 
                 gun.reload_timer.reset();
                 gun.reload_timer.start();
-                // gun.last_fired = Instant::now();
-                // gun.reloading = true;
             }
         },
 
